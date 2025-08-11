@@ -1,0 +1,110 @@
+<!doctype html> <html lang="en"> <head> <meta charset="UTF-8" /> <meta name="viewport" content="width=device-width, initial-scale=1" /> <title>CareerAI — Resume Builder</title> <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/> <link rel="stylesheet" href="resume.css" /> </head> <body> <div class="container py-4"> <div class="d-flex justify-content-between align-items-center mb-3"> <h3 class="m-0"><i class="fas fa-file-alt me-2"></i>Resume Builder</h3> <div class="d-flex gap-2"> <select id="templateSelect" class="form-select form-select-sm" style="width:160px;"> <option value="classic" selected>Classic (ATS)</option> </select> <button id="btnLoad" class="btn btn-outline-secondary btn-sm">Load</button> <button id="btnSave" class="btn btn-outline-primary btn-sm">Save</button> <button id="btnDownload" class="btn btn-primary btn-sm"><i class="fas fa-download me-1"></i>PDF</button> </div> </div>
+  <div class="row g-3">
+  <!-- Left: Form -->
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h5 class="mb-3">Personal Info</h5>
+        <div class="row g-2">
+          <div class="col-12">
+            <label class="form-label">Full Name</label>
+            <input id="name" class="form-control" placeholder="Your Name" />
+          </div>
+          <div class="col-12">
+            <label class="form-label">Role / Title</label>
+            <input id="title" class="form-control" placeholder="e.g., Software Engineer" />
+          </div>
+          <div class="col-12">
+            <label class="form-label">Email</label>
+            <input id="email" type="email" class="form-control" placeholder="you@example.com" />
+          </div>
+          <div class="col-12">
+            <label class="form-label">Phone</label>
+            <input id="phone" class="form-control" placeholder="+91-XXXXXXXXXX" />
+          </div>
+          <div class="col-12">
+            <label class="form-label">Location</label>
+            <input id="location" class="form-control" placeholder="City, Country" />
+          </div>
+          <div class="col-12">
+            <label class="form-label">Links (LinkedIn | GitHub | Portfolio)</label>
+            <input id="links" class="form-control" placeholder="LinkedIn | GitHub | Portfolio" />
+          </div>
+        </div>
+
+        <hr class="my-4" />
+        <h5 class="mb-2">Professional Summary</h5>
+        <textarea id="summary" class="form-control" rows="4" placeholder="2–3 line concise summary tailored to target role"></textarea>
+
+        <hr class="my-4" />
+        <h5 class="mb-2">Skills (comma-separated)</h5>
+        <input id="skills" class="form-control" placeholder="Python, React, SQL, AWS, Data Structures" />
+
+        <hr class="my-4" />
+        <h5 class="mb-2">Experience</h5>
+        <small class="text-muted">Each line format: Company | Role | YYYY–YYYY | City | Achievement 1; Achievement 2</small>
+        <textarea id="experience" class="form-control mt-2" rows="6" placeholder="Acme Corp | SDE-1 | 2022–Present | Bangalore | Improved API latency by 35%; Built internal tools"></textarea>
+
+        <hr class="my-4" />
+        <h5 class="mb-2">Education</h5>
+        <textarea id="education" class="form-control" rows="3" placeholder="B.Tech CSE | XYZ University | 2018–2022 | CGPA 8.6/10"></textarea>
+
+        <hr class="my-4" />
+        <h5 class="mb-2">Projects</h5>
+        <small class="text-muted">One project per line: Title | Stack | Impact/Outcome</small>
+        <textarea id="projects" class="form-control mt-2" rows="4" placeholder="CareerAI — AI-based career recommendations | React, Node | Built scoring engine and improved UX"></textarea>
+
+        <hr class="my-4" />
+        <h5 class="mb-2">Certifications (optional)</h5>
+        <textarea id="certs" class="form-control" rows="2" placeholder="AWS Certified Cloud Practitioner | 2024"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Preview -->
+  <div class="col-lg-7">
+    <div class="resume-page shadow-sm" id="resumePreview">
+      <div class="r-header">
+        <div class="r-name" id="p_name">Your Name</div>
+        <div class="r-title" id="p_title">Target Role</div>
+        <div class="r-contact">
+          <span id="p_email">you@example.com</span> - 
+          <span id="p_phone">+91-XXXXXXXXXX</span> - 
+          <span id="p_location">City, Country</span>
+        </div>
+        <div class="r-links" id="p_links">LinkedIn | GitHub | Portfolio</div>
+      </div>
+
+      <div class="r-section">
+        <div class="r-section-title">SUMMARY</div>
+        <div class="r-body" id="p_summary">Concise professional summary goes here.</div>
+      </div>
+
+      <div class="r-section">
+        <div class="r-section-title">SKILLS</div>
+        <ul class="r-list" id="p_skills"></ul>
+      </div>
+
+      <div class="r-section">
+        <div class="r-section-title">EXPERIENCE</div>
+        <div id="p_experience">—</div>
+      </div>
+
+      <div class="r-section">
+        <div class="r-section-title">EDUCATION</div>
+        <div id="p_education">—</div>
+      </div>
+
+      <div class="r-section">
+        <div class="r-section-title">PROJECTS</div>
+        <div id="p_projects">—</div>
+      </div>
+
+      <div class="r-section" id="certSection" style="display:none;">
+        <div class="r-section-title">CERTIFICATIONS</div>
+        <div id="p_certs"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div> <!-- jsPDF --> <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> <script src="resume.js"></script> </body> </html>

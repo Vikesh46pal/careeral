@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CareerAI - AI-Based Career Recommendation</title>
+
+    <!-- Vendor CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Base + Glass + Background CSS -->
+    <style>
+      :root {
+        --primary-color: #667eea;
+        --secondary-color: #764ba2;
+        --accent-color: #f093fb;
+        --text-dark: #e9ecf5;
+        --text-light: #cfd3e1;
+        --bg1: #0b1220;
+        --bg2: #1a2740;
+        --glass-bg: rgba(255, 255, 255, 0.12);
+        --glass-border: rgba(255, 255, 255, 0.25);
+        --glass-shadow: rgba(0, 0, 0, 0.25);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: transparent;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text-dark);
+      }
+
+      /* Background container: Matrix canvas + gradient */
+      #bg {
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        overflow: hidden;
+      }
+      #matrixCanvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        opacity: 0.24; /* subtle */
+        mix-blend-mode: screen;
+      }
+      .gradient-overlay {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+            1200px 800px at 10% 10%,
+            rgba(102, 126, 234, 0.2),
+            transparent 60%
+          ),
+          radial-gradient(
+            1000px 700px at 90% 80%,
+            rgba(118, 75, 162, 0.18),
+            transparent 60%
+          ),
+          linear-gradient(135deg, var(--bg1), var(--bg2));
+        z-index: -1;
+      }
+
+      /* Glass UI */
+      .glass-nav {
+        background: rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: saturate(140%) blur(14px);
+        -webkit-backdrop-filter: saturate(140%) blur(14px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 24px var(--glass-shadow);
+        border-radius: 16px;
+        margin: 10px 16px;
+        padding: 0.6rem 0;
+      }
+      .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(18px) saturate(140%);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 20px 40px var(--glass-shadow);
+      }
+      .glass-chip {
+        background: rgba(255, 255, 255, 0.16) !important;
+        backdrop-filter: blur(10px) saturate(140%);
+        -webkit-backdrop-filter: blur(10px) saturate(140%);
+        border: 1px solid rgba(255, 255, 255, 0.24);
+      }
+
+      /* Navbar links on glass */
+      .navbar .nav-link {
+        color: #f6f7fb !important;
+        opacity: 0.95;
+      }
+      .navbar .nav-link:hover {
+        opacity: 1;
+      }
+      .navbar-brand {
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
+      }
+
+      /* Layout spacing (fixed-top navbar clearance) */
+      body {
+        padding-top: 84px;
+      }
+      @media (max-width: 768px) {
+        body {
+          padding-top: 96px;
+        }
+      }
+
+      /* Main containers */
+      .main-container {
+        min-height: calc(100vh - 80px);
+        display: flex;
+        align-items: center;
+        padding: 2rem 0;
+      }
+
+      .form-container {
+        border-radius: 20px;
+        padding: 3rem;
+        max-width: 600px;
+        width: 100%;
+        margin: 0 auto;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .results-container {
+        border-radius: 20px;
+        padding: 2rem;
+        margin-top: 2rem;
+        display: none;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      /* Titles and text */
+      .form-title {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: var(--text-dark);
+      }
+      .form-title h2 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .form-title p {
+        color: var(--text-light);
+        font-size: 1.05rem;
+      }
+
+      .form-group {
+        margin-bottom: 1.25rem;
+      }
+      .form-label {
+        font-weight: 600;
+        color: #eef2ff;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .form-control,
+      .form-select {
+        background: rgba(255, 255, 255, 0.85);
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        color: #1a202c;
+      }
+      .form-control:focus,
+      .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        background: white;
+      }
+
+      .submit-btn {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        border: none;
+        border-radius: 12px;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        width: 100%;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      }
+      .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+      }
+      .submit-btn:active {
+        transform: translateY(0);
+      }
+
+      .results-title {
+        color: #eef2ff;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .career-card {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        color: white;
+        box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+      }
+      .career-card h5 {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      .loading-spinner {
+        display: none;
+        text-align: center;
+        margin-top: 1rem;
+      }
+      .spinner-border {
+        color: var(--primary-color);
+      }
+
+      .icon-gradient {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .floating-elements {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: -1;
+      }
+      .floating-elements::before,
+      .floating-elements::after {
+        content: "";
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+        animation: float 6s ease-in-out infinite;
+      }
+      .floating-elements::before {
+        width: 100px;
+        height: 100px;
+        top: 20%;
+        left: 10%;
+        animation-delay: 0s;
+      }
+      .floating-elements::after {
+        width: 150px;
+        height: 150px;
+        top: 60%;
+        right: 10%;
+        animation-delay: 3s;
+      }
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .glass-nav {
+          margin: 8px 10px;
+          border-radius: 14px;
+        }
+        .form-container {
+          margin: 1rem;
+          padding: 2rem 1.25rem;
+        }
+        .form-title h2 {
+          font-size: 2rem;
+        }
+      }
+    </style>
+
+    <!-- Simple front-end auth helpers (localStorage-based) -->
+    <script>
+      // Keys
+      const STORAGE_USERS = "careerai_users";
+      const STORAGE_CURRENT = "careerai_current_user";
+      // Get current user
+      function getCurrentUser() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_CURRENT));
+        } catch {
+          return null;
+        }
+      }
+      // Guard this page (redirect if not logged in)
+      (function guard() {
+        const u = getCurrentUser();
+        // NOTE: If you haven't built login.html yet, temporarily comment out the next 2 lines.
+        if (!u) {
+          // Redirect to login.html (create it using the template provided earlier)
+          window.location.replace("login.html");
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <!-- Background first -->
+    <div id="bg">
+      <canvas id="matrixCanvas"></canvas>
+      <div class="gradient-overlay"></div>
+    </div>
+
+    <div class="floating-elements"></div>
+
+    <!-- Navbar -->
+
+    <nav class="navbar navbar-expand-lg fixed-top glass-nav">
+      <div class="container">
+        <a class="navbar-brand d-flex flex-column" href="#">
+          <span><i class="fas fa-brain me-2"></i>CareerAI</span>
+          <small
+            id="welcomeStrip"
+            class="text-light opacity-75"
+            style="font-size: 0.9rem"
+          ></small>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <li class="nav-item">
+            <a class="nav-link" href="resume.html">Resume</a>
+          </li>
+
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+            <li class="nav-item">
+              <a class="nav-link" href="#about">About</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#contact">Contact</a>
+            </li>
+            <li class="nav-item d-flex align-items-center">
+              <button
+                id="logoutBtn"
+                class="btn btn-outline-light btn-sm ms-2 glass-chip"
+              >
+                Logout
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-container">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-lg-8">
+            <!-- Career Recommendation Form -->
+            <div class="form-container glass-card">
+              <div class="form-title">
+                <h2>
+                  <i class="fas fa-rocket me-2"></i>Discover Your Career Path
+                </h2>
+                <p>
+                  Let AI analyze your interests, skills, and preferences to
+                  recommend the perfect career for you
+                </p>
+              </div>
+
+              <form id="careerForm" method="POST" action="/recommend">
+                <div class="form-group">
+                  <label for="interest" class="form-label">
+                    <i class="fas fa-heart icon-gradient"></i>
+                    What are your main interests?
+                  </label>
+                  <select
+                    class="form-select"
+                    id="interest"
+                    name="interest"
+                    required
+                  >
+                    <option value="">Select your primary interest</option>
+                    <option value="technology">Technology & Innovation</option>
+                    <option value="healthcare">Healthcare & Medicine</option>
+                    <option value="business">Business & Finance</option>
+                    <option value="creative">Creative Arts & Design</option>
+                    <option value="education">Education & Teaching</option>
+                    <option value="science">Science & Research</option>
+                    <option value="sports">Sports & Fitness</option>
+                    <option value="social">Social Work & Community</option>
+                    <option value="environment">Environment & Nature</option>
+                    <option value="law">Law & Justice</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="skill" class="form-label">
+                    <i class="fas fa-tools icon-gradient"></i>
+                    What's your strongest skill?
+                  </label>
+                  <select class="form-select" id="skill" name="skill" required>
+                    <option value="">Select your top skill</option>
+                    <option value="programming">Programming & Coding</option>
+                    <option value="communication">
+                      Communication & Writing
+                    </option>
+                    <option value="analytical">Analytical Thinking</option>
+                    <option value="leadership">Leadership & Management</option>
+                    <option value="creative">Creative Problem Solving</option>
+                    <option value="mathematical">
+                      Mathematical & Statistical
+                    </option>
+                    <option value="interpersonal">Interpersonal Skills</option>
+                    <option value="technical">Technical & Engineering</option>
+                    <option value="artistic">Artistic & Design</option>
+                    <option value="research">Research & Investigation</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="subject" class="form-label">
+                    <i class="fas fa-book icon-gradient"></i>
+                    What's your favorite subject?
+                  </label>
+                  <select
+                    class="form-select"
+                    id="subject"
+                    name="subject"
+                    required
+                  >
+                    <option value="">Select your favorite subject</option>
+                    <option value="mathematics">Mathematics</option>
+                    <option value="science">
+                      Science (Physics/Chemistry/Biology)
+                    </option>
+                    <option value="computer">Computer Science</option>
+                    <option value="english">English & Literature</option>
+                    <option value="history">History & Social Studies</option>
+                    <option value="art">Art & Design</option>
+                    <option value="music">Music & Performing Arts</option>
+                    <option value="economics">Economics & Business</option>
+                    <option value="psychology">Psychology</option>
+                    <option value="languages">Foreign Languages</option>
+                  </select>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                  <i class="fas fa-magic me-2"></i>Get My Career Recommendations
+                </button>
+              </form>
+
+              <!-- Loading Spinner -->
+              <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner-border" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">AI is analyzing your profile...</p>
+              </div>
+            </div>
+
+            <!-- Results Container -->
+            <div class="results-container glass-card" id="resultsContainer">
+              <div class="results-title">
+                <i class="fas fa-star"></i>
+                Your Personalized Career Recommendations
+              </div>
+              <div id="careerResults"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chatbot Floating Button + Box -->
+    <div
+      id="chatbot"
+      style="position: fixed; bottom: 20px; right: 20px; z-index: 9999"
+    >
+      <button
+        id="chatbotToggle"
+        class="btn btn-primary rounded-circle shadow glass-chip"
+        style="width: 60px; height: 60px"
+      >
+        <i class="fas fa-comment-dots"></i>
+      </button>
+
+      <div
+        id="chatbotBox"
+        class="card shadow glass-card"
+        style="
+          display: none;
+          width: 300px;
+          max-height: 400px;
+          overflow-y: auto;
+          margin-top: 10px;
+        "
+      >
+        <div
+          class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+        >
+          <span><i class="fas fa-robot me-1"></i> CareerAI Chatbot</span>
+          <button class="btn btn-sm btn-light" onclick="toggleChatbot()">
+            ×
+          </button>
+        </div>
+        <div class="card-body" id="chatMessages" style="font-size: 0.9rem">
+          <div class="text-muted text-center mb-2">
+            Hi there! How can I help today? 😊
+          </div>
+        </div>
+        <div class="card-footer p-2">
+          <input
+            type="text"
+            id="userInput"
+            class="form-control"
+            placeholder="Type your message..."
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Vendor JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- App Logic -->
+    <script>
+      // Personalized welcome using stored user
+      (function showWelcome() {
+        const el = document.getElementById("welcomeStrip");
+        try {
+          const user = JSON.parse(
+            localStorage.getItem("careerai_current_user")
+          );
+          if (el && user?.name) el.textContent = `Welcome, ${user.name}`;
+        } catch {}
+      })();
+
+      // Logout
+      (function wireLogout() {
+        const btn = document.getElementById("logoutBtn");
+        if (!btn) return;
+        btn.addEventListener("click", function () {
+          localStorage.removeItem("careerai_current_user");
+          window.location.replace("login.html");
+        });
+      })();
+
+      // Career database + scoring
+      const careersDatabase = [
+        {
+          title: "AI Ethics Specialist",
+          tags: {
+            interest: "technology",
+            skill: "analytical",
+            subject: "psychology",
+          },
+          futureProof: true,
+        },
+        {
+          title: "Machine Learning Engineer",
+          tags: {
+            interest: "technology",
+            skill: "programming",
+            subject: "mathematics",
+          },
+          futureProof: true,
+        },
+        {
+          title: "Clinical Psychologist",
+          tags: {
+            interest: "healthcare",
+            skill: "interpersonal",
+            subject: "psychology",
+          },
+          futureProof: true,
+        },
+        {
+          title: "Cybersecurity Analyst",
+          tags: {
+            interest: "technology",
+            skill: "technical",
+            subject: "computer",
+          },
+          futureProof: true,
+        },
+        {
+          title: "User Experience Researcher",
+          tags: {
+            interest: "creative",
+            skill: "artistic",
+            subject: "psychology",
+          },
+          futureProof: true,
+        },
+        {
+          title: "Sustainability Consultant",
+          tags: {
+            interest: "environment",
+            skill: "communication",
+            subject: "science",
+          },
+          futureProof: true,
+        },
+        {
+          title: "Entrepreneur / Startup Founder",
+          tags: {
+            interest: "business",
+            skill: "leadership",
+            subject: "economics",
+          },
+          futureProof: true,
+        },
+        {
+          title: "Education Technology Specialist",
+          tags: {
+            interest: "education",
+            skill: "creative",
+            subject: "computer",
+          },
+          futureProof: true,
+        },
+      ];
+
+      function getBestCareerMatches(data) {
+        const scored = careersDatabase.map((career) => {
+          let matchScore = 0;
+          if (career.tags.interest === data.interest) matchScore += 1;
+          if (career.tags.skill === data.skill) matchScore += 1;
+          if (career.tags.subject === data.subject) matchScore += 1;
+          if (career.futureProof) matchScore += 0.5;
+
+          return {
+            title: career.title,
+            score: matchScore,
+            match:
+              matchScore >= 3.5
+                ? 100
+                : matchScore >= 2.5
+                ? 90
+                : matchScore >= 2
+                ? 80
+                : 70,
+          };
+        });
+        scored.sort((a, b) => b.score - a.score);
+        return scored.slice(0, 3);
+      }
+
+      document
+        .getElementById("careerForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          document.getElementById("loadingSpinner").style.display = "block";
+          document.querySelector(".submit-btn").disabled = true;
+
+          const formData = new FormData(this);
+          const data = {
+            interest: (formData.get("interest") || "").toLowerCase(),
+            skill: (formData.get("skill") || "").toLowerCase(),
+            subject: (formData.get("subject") || "").toLowerCase(),
+          };
+
+          setTimeout(() => {
+            document.getElementById("loadingSpinner").style.display = "none";
+            document.querySelector(".submit-btn").disabled = false;
+
+            const recommendations = getBestCareerMatches(data);
+            document.getElementById("resultsContainer").style.display = "block";
+            const resultContainer = document.getElementById("careerResults");
+            resultContainer.innerHTML = "";
+            recommendations.forEach((rec) => {
+              resultContainer.innerHTML += `
+              <div class="career-card">
+                <h5>${rec.title}</h5>
+                <span class="badge bg-light text-dark">${rec.match}% Match</span>
+              </div>
+            `;
+            });
+          }, 1000);
+        });
+
+      // Chatbot
+      const chatbotToggle = document.getElementById("chatbotToggle");
+      const chatbotBox = document.getElementById("chatbotBox");
+      const chatMessages = document.getElementById("chatMessages");
+      const userInput = document.getElementById("userInput");
+
+      function toggleChatbot() {
+        chatbotBox.style.display =
+          chatbotBox.style.display === "none" ? "block" : "none";
+        userInput.focus();
+      }
+      chatbotToggle.addEventListener("click", toggleChatbot);
+
+      const botReplies = {
+        hello: "Hello! 👋 How can I assist you with your career today?",
+        nervous:
+          "It's okay to be nervous. I'm here to guide you. Try filling out the form above to get career suggestions.",
+        confused:
+          "Don't worry! Just select your interest, skill, and subject — and I'll do the rest.",
+        doubt: "You can ask me anything about your career or the form options.",
+        ai: "AI is transforming careers! Explore paths like Data Scientist, AI Engineer, or ML Researcher.",
+        ethics:
+          "AI Ethics is a growing field. You could become an AI Ethics Specialist or Policy Analyst!",
+        career:
+          "I'm here to help you explore careers. Use the form above or ask me about a specific field!",
+        default:
+          "Hmm... I didn’t get that. Try asking about careers, AI, doubts, or how this works!",
+      };
+
+      userInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter" && userInput.value.trim()) {
+          const userMsg = userInput.value.trim();
+          appendMessage("You", userMsg, "end");
+          userInput.value = "";
+
+          const lower = userMsg.toLowerCase();
+          const foundKey = Object.keys(botReplies).find((key) =>
+            lower.includes(key)
+          );
+          const reply = foundKey ? botReplies[foundKey] : botReplies.default;
+
+          setTimeout(() => {
+            appendMessage("Bot", reply, "start");
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          }, 600);
+        }
+      });
+
+      function appendMessage(sender, text, align) {
+        const div = document.createElement("div");
+        div.className = `d-flex justify-content-${align} mb-2`;
+        div.innerHTML = `<div class="bg-light p-2 rounded shadow-sm" style="max-width: 80%;"><strong>${sender}:</strong> ${text}</div>`;
+        chatMessages.appendChild(div);
+      }
+    </script>
+
+    <!-- Subtle Matrix background script -->
+    <script>
+      (function () {
+        const canvas = document.getElementById("matrixCanvas");
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+
+        let w, h, columns, drops;
+        const fontSize = 14;
+        const density = 0.5;
+        const speedMin = 2;
+        const speedMax = 6;
+        const charset =
+          "アカサタナハマヤラワ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+        function resize() {
+          w = canvas.width = window.innerWidth;
+          h = canvas.height = window.innerHeight;
+          columns = Math.floor(w / fontSize);
+          drops = Array.from({ length: columns }, () => ({
+            y: Math.floor((Math.random() * h) / fontSize),
+            speed: speedMin + Math.random() * (speedMax - speedMin),
+            on: Math.random() < density,
+          }));
+        }
+
+        function draw() {
+          ctx.fillStyle = "rgba(10, 16, 28, 0.10)";
+          ctx.fillRect(0, 0, w, h);
+
+          ctx.font = `${fontSize}px monospace`;
+
+          for (let i = 0; i < columns; i++) {
+            const d = drops[i];
+            if (!d.on && Math.random() < 0.003) d.on = true;
+            if (d.on) {
+              const char = charset[Math.floor(Math.random() * charset.length)];
+              const x = i * fontSize;
+              const y = d.y * fontSize;
+
+              const alpha = 0.35 + Math.random() * 0.25;
+              const g = 180 + Math.floor(Math.random() * 50);
+              ctx.fillStyle = `rgba(80, ${g}, 120, ${alpha})`;
+              ctx.fillText(char, x, y);
+
+              d.y += d.speed * 0.05;
+              if (y > h + 50) {
+                d.y = -Math.random() * 20;
+                d.speed = speedMin + Math.random() * (speedMax - speedMin);
+                d.on = Math.random() < density * 0.8;
+              }
+            } else if (Math.random() < 0.001) {
+              const x = i * fontSize;
+              const y = (Math.random() * h) | 0;
+              ctx.fillStyle = "rgba(60, 140, 90, 0.08)";
+              ctx.fillRect(x, y, 2, 2);
+            }
+          }
+          requestAnimationFrame(draw);
+        }
+
+        window.addEventListener("resize", resize, { passive: true });
+        resize();
+        draw();
+      })();
+    </script>
+  </body>
+</html>
